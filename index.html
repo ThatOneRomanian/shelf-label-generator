@@ -133,14 +133,20 @@
   }
   .card h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--muted);font-size:var(--text-xs);font-weight:400;margin-top:var(--space-1);}
 
+  /* Vertical rhythm between form fields: var(--space-3) between blocks,
+     never before the first one. Scoped to *direct* children so it can't
+     misfire on a label nested one level deeper inside a .row2 pair --
+     that's what caused Price/Weight to hug the field above them. */
   label.field{display:block;font-size:var(--text-sm);font-weight:600;color:#43474e;margin:var(--space-3) 0 var(--space-1);}
-  label.field:first-of-type{margin-top:0;}
+  form > label.field:first-child{margin-top:0;}
+  .row2 label.field{margin-top:0;}
   input[type=text],input[type=number],select{
     width:100%;padding:var(--space-2) var(--space-3);border:1px solid var(--line);border-radius:var(--radius-md);
     font-size:var(--text-base);font-family:inherit;background:#fff;color:var(--ink);
   }
   input:focus,select:focus{outline:2px solid #328B5255;border-color:var(--accent);}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin-top:var(--space-3);}
+  .card>.row2:first-of-type{margin-top:0;}
   .form-actions{display:flex;gap:var(--space-2);margin-top:var(--space-4);}
 
   table.label-table{width:100%;border-collapse:collapse;font-size:var(--text-base);}
@@ -283,7 +289,7 @@
     .count-badge{font-size:var(--text-xs);padding:var(--space-1) var(--space-2);}
 
     .card{padding:var(--space-4);}
-    .row2{grid-template-columns:1fr;gap:0;}
+    .row2{grid-template-columns:1fr;gap:var(--space-3);}
 
     /* Card-style responsive table instead of horizontal scroll */
     table.label-table thead{display:none;}
