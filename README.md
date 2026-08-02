@@ -1,8 +1,8 @@
-# BuzzedBuds Shelf Label Generator
+# Shelf Label Generator
 
 A free, browser-based tool for designing, importing, and printing 2-up retail shelf tags. No install, no account, no server — everything runs client-side and nothing you enter ever leaves your browser.
 
-**[Open the live app](https://ThatOneRomanian.github.io/BuzzedBuds/)**
+**[Open the live app](https://ThatOneRomanian.github.io/shelf-label-generator/)**
 
 ## Features
 
