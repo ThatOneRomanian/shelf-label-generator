@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Free browser-based tool to design, import, and print 2-up retail shelf tags. No install, no account, nothing leaves your browser.">
+<title>BuzzedBuds Shelf Label Generator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23328B52'/%3E%3Cstop offset='1' stop-color='%233D73CD'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b1d1f;
+    --muted:#6b7280;
+    --line:#e2e4e8;
+    --bg:#f4f5f7;
+    --card:#ffffff;
+    --accent:#328B52;
+    --accent-dark:#256b3f;
+    --danger:#c0392b;
+    --sativa-bg:#E3CD12;
+    --sativa-fg:#111111;
+    --indica-bg:#3D73CD;
+    --indica-fg:#ffffff;
+    --hybrid-bg:#328B52;
+    --hybrid-fg:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Inter",Arial,Helvetica,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0 0 .4em;}
+  .wrap{max-width:1200px;margin:0 auto;padding:24px 20px 80px;}
+
+  .hero{
+    background:radial-gradient(ellipse at 15% -20%, #2f8a56 0%, transparent 55%),
+               radial-gradient(ellipse at 100% 0%, #3D73CD 0%, transparent 45%),
+               linear-gradient(150deg,#14171a 0%,#1c2126 60%,#171b1f 100%);
+    color:#fff;padding:36px 20px 30px;
+  }
+  .hero-inner{max-width:1200px;margin:0 auto;}
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:16px;
+  }
+  header.top .brandline{display:flex;align-items:center;gap:13px;}
+  header.top .logo{
+    width:42px;height:42px;border-radius:12px;flex:none;
+    background:linear-gradient(135deg,#3fb377,#3D73CD);
+    box-shadow:0 4px 14px rgba(61,115,205,.35);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;
+  }
+  header.top h1{font-size:22px;font-weight:800;letter-spacing:-.01em;color:#fff;}
+  header.top p.sub{margin:3px 0 0;color:#aab0b8;font-size:13.5px;}
+  .hero .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+    color:#cfe8da;font-size:11.5px;font-weight:600;letter-spacing:.03em;
+    padding:5px 11px;border-radius:999px;text-transform:uppercase;margin-bottom:14px;
+  }
+  .hero .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#3fd07d;box-shadow:0 0 0 3px rgba(63,208,125,.25);}
+
+  .toolbar{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:22px;
+  }
+  button{
+    font-family:inherit;font-size:14px;font-weight:600;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:9px 14px;border-radius:8px;cursor:pointer;
+    transition:background .12s,border-color .12s,transform .05s;
+  }
+  button:hover{border-color:#c7cad0;background:#fafafa;}
+  button:active{transform:translateY(1px);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  button.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
+  button.ghost{background:transparent;}
+  button.danger{color:var(--danger);border-color:#eecbc6;}
+  button.danger:hover{background:#fdf0ee;}
+  button.small{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  button .icon{vertical-align:-3px;margin-right:5px;}
+
+  .grid2{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:18px;margin-bottom:20px;
+  }
+  .card h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:#3a3d42;}
+  .card h2 small{display:block;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px;}
+
+  label.field{display:block;font-size:12.5px;font-weight:600;color:#43474e;margin:12px 0 5px;}
+  label.field:first-of-type{margin-top:0;}
+  input[type=text],input[type=number],select{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
+    font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+  }
+  input:focus,select:focus{outline:2px solid #328B5255;border-color:var(--accent);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .form-actions{display:flex;gap:8px;margin-top:16px;}
+
+  table.label-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.label-table th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);
+  }
+  table.label-table td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.label-table tr:last-child td{border-bottom:none;}
+  .chip{
+    display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.03em;
+  }
+  .chip.sativa{background:var(--sativa-bg);color:var(--sativa-fg);}
+  .chip.indica{background:var(--indica-bg);color:var(--indica-fg);}
+  .chip.hybrid{background:var(--hybrid-bg);color:var(--hybrid-fg);}
+  .empty-note{color:var(--muted);font-size:13.5px;padding:14px 4px;}
+  .row-actions{display:flex;gap:6px;white-space:nowrap;}
+
+  .dropzone{
+    border:2px dashed #c7cad0;border-radius:10px;padding:22px 16px;text-align:center;
+    color:var(--muted);font-size:13.5px;cursor:pointer;transition:border-color .12s,background .12s;
+  }
+  .dropzone.drag{border-color:var(--accent);background:#328b5210;}
+  .dropzone strong{color:var(--ink);}
+  .import-hint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+
+  .count-badge{
+    background:#eef1f4;color:#3a3d42;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;
+  }
+
+  /* ---- modal ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,22,25,.55);display:flex;
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .overlay[hidden]{display:none;}
+  .modal{
+    background:#fff;border-radius:14px;max-width:640px;width:100%;
+    max-height:88vh;overflow:auto;padding:22px;
+  }
+  .modal h2{font-size:17px;}
+  .modal p.desc{color:var(--muted);font-size:13.5px;margin-top:-4px;}
+  .map-row{
+    display:grid;grid-template-columns:170px 1fr;gap:14px;align-items:center;
+    padding:9px 0;border-bottom:1px solid var(--line);
+  }
+  .map-row:last-of-type{border-bottom:none;}
+  .map-row .field-name{font-size:13.5px;font-weight:600;}
+  .map-row .field-name span{display:block;font-weight:400;color:var(--muted);font-size:11.5px;margin-top:1px;}
+  .preview-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:14px;}
+  .preview-table th,.preview-table td{
+    border:1px solid var(--line);padding:4px 6px;text-align:left;
+    max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .preview-table th{background:#f7f8f9;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+  .error-banner{
+    background:#fdecea;border:1px solid #f3c6c1;color:#8a2b20;border-radius:8px;
+    padding:10px 12px;font-size:13px;margin-top:12px;
+  }
+
+  /* ---- Sheet / label preview & print ---- */
+  #sheet-outer{
+    background:#dfe1e5;border-radius:12px;padding:24px;overflow:auto;
+  }
+  #sheet-outer h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:#3a3d42;margin-bottom:14px;}
+  .sheet-page{
+    background:#fff;width:8.5in;height:11in;margin:0 auto 24px;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);padding:0.25in;
+  }
+  .sheet-page:last-child{margin-bottom:0;}
+  .label-grid{
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(8,1fr);
+    width:100%;height:100%;
+  }
+  .label-cell{
+    display:flex;border:1px solid #000;overflow:hidden;
+  }
+  .label-cell.blank{border-color:#000;}
+  .cell-details{
+    flex:0 0 60%;max-width:60%;border-right:1px solid #000;
+    padding:5px 8px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+  }
+  .cell-details .brand{
+    font-weight:700;font-size:14px;font-family:Arial,Helvetica,sans-serif;line-height:1.15;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cell-details .desc{
+    font-weight:400;font-size:12px;font-family:Arial,Helvetica,sans-serif;line-height:1.2;
+    margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  }
+  .cell-price{
+    flex:0 0 20%;max-width:20%;border-right:1px solid #000;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:15px;font-family:Arial,Helvetica,sans-serif;
+  }
+  .cell-badge{
+    flex:0 0 20%;max-width:20%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    font-family:Arial,Helvetica,sans-serif;padding:2px;
+  }
+  .cell-badge .qty{font-size:13px;font-weight:700;line-height:1.2;}
+  .cell-badge .type{font-size:11px;font-weight:600;line-height:1.2;text-transform:lowercase;letter-spacing:.02em;}
+
+  .site-footer{
+    background:#14171a;color:#8b929b;padding:22px 0;margin-top:0;font-size:12.5px;
+  }
+  .footer-inner{
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding-top:0;padding-bottom:0;
+  }
+
+  .print-fab{
+    position:fixed;right:26px;bottom:26px;z-index:50;
+    padding:14px 22px;font-size:15px;border-radius:999px;
+    box-shadow:0 6px 18px rgba(50,139,82,.4);
+  }
+
+  .no-print{}
+  @media print{
+    .no-print{display:none !important;}
+    body{background:#fff;}
+    .wrap{max-width:none;padding:0;margin:0;}
+    #sheet-outer{background:#fff;padding:0;border-radius:0;overflow:visible;}
+    .sheet-page{
+      box-shadow:none;margin:0;width:8.5in;height:11in;
+      page-break-after:always;
+    }
+    .sheet-page:last-child{page-break-after:auto;}
+    .label-cell{page-break-inside:avoid;}
+    * {
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+      color-adjust:exact;
+    }
+    @page{size:8.5in 11in;margin:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero no-print">
+  <div class="hero-inner">
+    <span class="pill">Free · Runs entirely in your browser</span>
+    <header class="top">
+      <div class="brandline">
+        <div class="logo"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+        <div>
+          <h1>BuzzedBuds Shelf Label Generator</h1>
+          <p class="sub">Design, import, and print 2-up retail shelf tags — no install, no account, nothing leaves your browser.</p>
+        </div>
+      </div>
+    </header>
+    <div class="toolbar">
+      <span class="count-badge" id="countBadge">0 labels</span>
+      <button id="btnSample">Load Sample Data</button>
+      <button id="btnImport">Import CSV / Excel</button>
+      <button class="danger" id="btnClear">Clear All</button>
+      <button class="primary" id="btnPrintTop"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print Labels</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap no-print">
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" hidden>
+
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2 id="formTitle">Add a Label<small>Fields marked are used on the printed tag</small></h2>
+        <form id="labelForm">
+          <label class="field" for="f_brand">Brand</label>
+          <input type="text" id="f_brand" placeholder="e.g. FOUR54" required>
+
+          <label class="field" for="f_product">Product Name / Details</label>
+          <input type="text" id="f_product" placeholder="e.g. Route 66 Live Resin Cartridge" required>
+
+          <div class="row2">
+            <div>
+              <label class="field" for="f_price">Price ($)</label>
+              <input type="number" id="f_price" step="0.01" min="0" placeholder="39.04" required>
+            </div>
+            <div>
+              <label class="field" for="f_weight">Weight / Qty</label>
+              <input type="text" id="f_weight" placeholder="e.g. 1g, 5x0.5g" required>
+            </div>
+          </div>
+
+          <label class="field" for="f_type">Type</label>
+          <select id="f_type">
+            <option value="sativa">Sativa</option>
+            <option value="indica">Indica</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+
+          <div class="form-actions">
+            <button type="submit" class="primary" id="btnSubmit">Add Label</button>
+            <button type="button" class="ghost" id="btnCancelEdit" hidden>Cancel Edit</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Import From File<small>CSV works fully offline · .xlsx/.xls needs an internet connection to load the parser</small></h2>
+        <div class="dropzone" id="dropzone">
+          <div><strong>Click to browse</strong> or drag a .csv / .xlsx / .xls file here</div>
+        </div>
+        <div class="import-hint">After upload you'll map your file's columns to Brand, Product, Price, Weight/Qty, and Type before anything is imported.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Active Labels<small>Edit or delete individual entries below</small></h2>
+        <table class="label-table" id="labelTable">
+          <thead>
+            <tr><th>Brand</th><th>Product</th><th>Price</th><th>Weight/Qty</th><th>Type</th><th></th></tr>
+          </thead>
+          <tbody id="labelTbody"></tbody>
+        </table>
+        <div class="empty-note" id="emptyNote">No labels yet — add one, load sample data, or import a file.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="sheet-outer">
+  <h2>Print Preview</h2>
+  <div id="sheetPages"></div>
+</div>
+
+<footer class="site-footer no-print">
+  <div class="wrap footer-inner">
+    <span>BuzzedBuds Shelf Label Generator — free &amp; open source.</span>
+    <span>All data stays in your browser. Nothing is uploaded anywhere.</span>
+  </div>
+</footer>
+
+<button class="primary print-fab no-print" id="btnPrintFab"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+
+<!-- Column mapping modal -->
+<div class="overlay no-print" id="mapOverlay" hidden>
+  <div class="modal">
+    <h2>Map Your Columns</h2>
+    <p class="desc">Tell us which column in <span id="mapFileName"></span> holds each field. We've auto-guessed where we could.</p>
+
+    <div id="mapRows"></div>
+
+    <table class="preview-table" id="mapPreviewTable"></table>
+
+    <div id="mapError"></div>
+
+    <div class="modal-actions">
+      <button class="ghost" id="btnMapCancel">Cancel</button>
+      <button class="primary" id="btnMapConfirm">Confirm Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "buzzedbuds_labels_v1";
+  var TYPE_STYLES = {
+    sativa: {bg:"#E3CD12", fg:"#111111"},
+    indica: {bg:"#3D73CD", fg:"#ffffff"},
+    hybrid: {bg:"#328B52", fg:"#ffffff"}
+  };
+  var LABELS_PER_PAGE = 16; // 2 cols x 8 rows
+
+  var state = {
+    labels: loadLabels(),
+    editingId: null,
+    pendingImport: null // {headers, rows, fileName}
+  };
+
+  function uid(){
+    return (crypto && crypto.randomUUID) ? crypto.randomUUID() : ("id" + Date.now() + Math.random().toString(16).slice(2));
+  }
+
+  function loadLabels(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveLabels(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.labels)); }catch(e){}
+  }
+
+  function escapeHtml(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function fmtPrice(p){
+    var n = Number(p);
+    if (isNaN(n)) return "$0.00";
+    return "$" + n.toFixed(2);
+  }
+  function normType(t){
+    var v = String(t||"").trim().toLowerCase();
+    if (v.indexOf("sat") === 0 || v === "s") return "sativa";
+    if (v.indexOf("ind") === 0 || v === "i") return "indica";
+    if (v.indexOf("hyb") === 0 || v === "h") return "hybrid";
+    if (TYPE_STYLES[v]) return v;
+    return "hybrid"; // sane fallback color, original text still not lost elsewhere
+  }
+
+  /* ---------------- Rendering: form / table ---------------- */
+
+  var els = {
+    brand: document.getElementById("f_brand"),
+    product: document.getElementById("f_product"),
+    price: document.getElementById("f_price"),
+    weight: document.getElementById("f_weight"),
+    type: document.getElementById("f_type"),
+    form: document.getElementById("labelForm"),
+    formTitle: document.getElementById("formTitle"),
+    btnSubmit: document.getElementById("btnSubmit"),
+    btnCancelEdit: document.getElementById("btnCancelEdit"),
+    tbody: document.getElementById("labelTbody"),
+    emptyNote: document.getElementById("emptyNote"),
+    countBadge: document.getElementById("countBadge"),
+    sheetPages: document.getElementById("sheetPages")
+  };
+
+  function resetForm(){
+    state.editingId = null;
+    els.form.reset();
+    els.type.value = "sativa";
+    els.formTitle.innerHTML = "Add a Label<small>Fields marked are used on the printed tag</small>";
+    els.btnSubmit.textContent = "Add Label";
+    els.btnCancelEdit.hidden = true;
+  }
+
+  function startEdit(id){
+    var item = state.labels.find(function(l){ return l.id === id; });
+    if (!item) return;
+    state.editingId = id;
+    els.brand.value = item.brand;
+    els.product.value = item.product;
+    els.price.value = item.price;
+    els.weight.value = item.weight;
+    els.type.value = item.type;
+    els.formTitle.innerHTML = "Edit Label<small>Updating an existing tag</small>";
+    els.btnSubmit.textContent = "Save Changes";
+    els.btnCancelEdit.hidden = false;
+    els.brand.focus();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function deleteLabel(id){
+    state.labels = state.labels.filter(function(l){ return l.id !== id; });
+    if (state.editingId === id) resetForm();
+    saveLabels();
+    renderAll();
+  }
+
+  els.form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var data = {
+      brand: els.brand.value.trim(),
+      product: els.product.value.trim(),
+      price: parseFloat(els.price.value) || 0,
+      weight: els.weight.value.trim(),
+      type: els.type.value
+    };
+    if (!data.brand || !data.product || !data.weight){ return; }
+
+    if (state.editingId){
+      var idx = state.labels.findIndex(function(l){ return l.id === state.editingId; });
+      if (idx !== -1) state.labels[idx] = Object.assign({id: state.editingId}, data);
+    } else {
+      state.labels.push(Object.assign({id: uid()}, data));
+    }
+    saveLabels();
+    resetForm();
+    renderAll();
+  });
+
+  els.btnCancelEdit.addEventListener("click", resetForm);
+
+  document.getElementById("btnClear").addEventListener("click", function(){
+    if (!state.labels.length) return;
+    if (!confirm("Remove all " + state.labels.length + " labels? This can't be undone.")) return;
+    state.labels = [];
+    resetForm();
+    saveLabels();
+    renderAll();
+  });
+
+  document.getElementById("btnSample").addEventListener("click", function(){
+    var sample = [
+      {brand:"Sticky Greens", product:"Electric Green Frog Live Diamonds", price:39.04, weight:"0.95g", type:"sativa"},
+      {brand:"FOUR54", product:"Route 66 Live Resin Cartridge", price:44.06, weight:"1g", type:"sativa"},
+      {brand:"Purple Hills", product:"Live Resin Critical Punch XL AIO", price:46.27, weight:"1g", type:"indica"},
+      {brand:"Pistol and Paris", product:"Pink Goo Pre-Roll", price:12.99, weight:"10x0.5g", type:"indica"},
+      {brand:"Truro", product:"Cosmic Cookies Pre-Roll", price:9.49, weight:"5x0.5g", type:"hybrid"},
+      {brand:"HighXotic", product:"Royal Assembly: The Summit Pre-Roll", price:54.99, weight:"20x0.5g", type:"hybrid"},
+      {brand:"EastCann", product:"Scented Marker Prerolls", price:18.47, weight:"3x0.5g", type:"indica"},
+      {brand:"1964", product:"FZY Peach Live Rosin Gummies", price:31.58, weight:"10x1 Pack", type:"indica"},
+      {brand:"Super Toast", product:"Blue Razz Rosin Bites", price:24.80, weight:"10x1 Pack", type:"sativa"},
+      {brand:"Adults Only", product:"NSFW Promiscuous Peach Sour Quickies", price:22.58, weight:"10x1 Pack", type:"hybrid"}
+    ];
+    sample.forEach(function(s){ state.labels.push(Object.assign({id: uid()}, s)); });
+    saveLabels();
+    renderAll();
+  });
+
+  function renderTable(){
+    els.tbody.innerHTML = "";
+    els.emptyNote.style.display = state.labels.length ? "none" : "block";
+    state.labels.forEach(function(l){
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + escapeHtml(l.brand) + "</td>" +
+        "<td>" + escapeHtml(l.product) + "</td>" +
+        "<td>" + fmtPrice(l.price) + "</td>" +
+        "<td>" + escapeHtml(l.weight) + "</td>" +
+        "<td><span class='chip " + l.type + "'>" + escapeHtml(l.type) + "</span></td>" +
+        "<td class='row-actions'>" +
+          "<button class='small' data-edit='" + l.id + "'>Edit</button>" +
+          "<button class='small danger' data-del='" + l.id + "'>Delete</button>" +
+        "</td>";
+      els.tbody.appendChild(tr);
+    });
+    els.countBadge.textContent = state.labels.length + " label" + (state.labels.length === 1 ? "" : "s");
+  }
+
+  els.tbody.addEventListener("click", function(e){
+    var editId = e.target.getAttribute("data-edit");
+    var delId = e.target.getAttribute("data-del");
+    if (editId) startEdit(editId);
+    if (delId) deleteLabel(delId);
+  });
+
+  /* ---------------- Rendering: print sheet ---------------- */
+
+  function labelCellHtml(l){
+    if (!l){
+      return "<div class='label-cell blank'>" +
+        "<div class='cell-details'></div>" +
+        "<div class='cell-price'></div>" +
+        "<div class='cell-badge'></div>" +
+      "</div>";
+    }
+    var t = normType(l.type);
+    var style = TYPE_STYLES[t];
+    return "<div class='label-cell'>" +
+      "<div class='cell-details'>" +
+        "<div class='brand'>" + escapeHtml(l.brand) + "</div>" +
+        "<div class='desc'>" + escapeHtml(l.product) + "</div>" +
+      "</div>" +
+      "<div class='cell-price'>" + fmtPrice(l.price) + "</div>" +
+      "<div class='cell-badge' style='background:" + style.bg + ";color:" + style.fg + ";'>" +
+        "<div class='qty'>" + escapeHtml(l.weight) + "</div>" +
+        "<div class='type'>" + escapeHtml(t) + "</div>" +
+      "</div>" +
+    "</div>";
+  }
+
+  function renderSheet(){
+    els.sheetPages.innerHTML = "";
+    if (!state.labels.length){
+      els.sheetPages.innerHTML = "<p class='empty-note'>Nothing to print yet.</p>";
+      return;
+    }
+    var pageCount = Math.ceil(state.labels.length / LABELS_PER_PAGE);
+    for (var p = 0; p < pageCount; p++){
+      var slice = state.labels.slice(p * LABELS_PER_PAGE, (p + 1) * LABELS_PER_PAGE);
+      while (slice.length < LABELS_PER_PAGE) slice.push(null);
+      var cellsHtml = slice.map(labelCellHtml).join("");
+      var page = document.createElement("div");
+      page.className = "sheet-page";
+      page.innerHTML = "<div class='label-grid'>" + cellsHtml + "</div>";
+      els.sheetPages.appendChild(page);
+    }
+  }
+
+  function renderAll(){
+    renderTable();
+    renderSheet();
+  }
+
+  /* ---------------- Print buttons ---------------- */
+  function doPrint(){ window.print(); }
+  document.getElementById("btnPrintTop").addEventListener("click", doPrint);
+  document.getElementById("btnPrintFab").addEventListener("click", doPrint);
+
+  /* ---------------- Import: CSV / XLSX ---------------- */
+
+  var fileInput = document.getElementById("fileInput");
+  var dropzone = document.getElementById("dropzone");
+  document.getElementById("btnImport").addEventListener("click", function(){ fileInput.click(); });
+  dropzone.addEventListener("click", function(){ fileInput.click(); });
+  dropzone.addEventListener("dragover", function(e){ e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", function(){ dropzone.classList.remove("drag"); });
+  dropzone.addEventListener("drop", function(e){
+    e.preventDefault();
+    dropzone.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", function(){
+    if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+    fileInput.value = "";
+  });
+
+  function handleFile(file){
+    var name = file.name.toLowerCase();
+    if (name.endsWith(".csv")){
+      var reader = new FileReader();
+      reader.onload = function(){
+        try{
+          var rows = parseCSV(String(reader.result));
+          openMapping(rows, file.name);
+        }catch(err){
+          alert("Couldn't parse that CSV file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    } else if (name.endsWith(".xlsx") || name.endsWith(".xls")){
+      loadSheetJs(function(err){
+        if (err){
+          alert("Couldn't load the Excel parser (needs an internet connection). Try exporting to CSV instead.");
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(){
+          try{
+            var data = new Uint8Array(reader.result);
+            var wb = XLSX.read(data, {type:"array"});
+            var sheet = wb.Sheets[wb.SheetNames[0]];
+            var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+            rows = rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+            openMapping(rows, file.name);
+          }catch(err){
+            alert("Couldn't parse that Excel file: " + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    } else {
+      alert("Unsupported file type. Please upload a .csv, .xlsx, or .xls file.");
+    }
+  }
+
+  var sheetJsLoading = null;
+  function loadSheetJs(cb){
+    if (window.XLSX) return cb(null);
+    if (sheetJsLoading){ sheetJsLoading.push(cb); return; }
+    sheetJsLoading = [cb];
+    var s = document.createElement("script");
+    s.src = "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
+    s.onload = function(){ sheetJsLoading.forEach(function(f){ f(null); }); sheetJsLoading = null; };
+    s.onerror = function(){ sheetJsLoading.forEach(function(f){ f(new Error("load failed")); }); sheetJsLoading = null; };
+    document.head.appendChild(s);
+  }
+
+  function parseCSV(text){
+    // Handles quoted fields, escaped quotes (""), commas & newlines inside quotes.
+    var rows = [];
+    var row = [];
+    var field = "";
+    var inQuotes = false;
+    text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    for (var i = 0; i < text.length; i++){
+      var c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i++; }
+          else { inQuotes = false; }
+        } else {
+          field += c;
+        }
+      } else {
+        if (c === '"'){ inQuotes = true; }
+        else if (c === ','){ row.push(field); field = ""; }
+        else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+        else { field += c; }
+      }
+    }
+    row.push(field);
+    rows.push(row);
+    return rows.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+  }
+
+  /* ---------------- Column mapping modal ---------------- */
+
+  var FIELD_DEFS = [
+    {key:"brand",   label:"Brand",               hint:"e.g. FOUR54",              keywords:["brand"]},
+    {key:"product", label:"Product Name/Details", hint:"e.g. Route 66 Pre-Roll",   keywords:["product","description","name","item","title"]},
+    {key:"price",   label:"Price",                hint:"e.g. 39.04",               keywords:["price","cost","msrp","retail"]},
+    {key:"weight",  label:"Weight / Qty",         hint:"e.g. 1g, 5x0.5g",          keywords:["weight","qty","quantity","size","wt"]},
+    {key:"type",    label:"Strain / Type",        hint:"sativa / indica / hybrid", keywords:["strain","type","category","subcategory"]}
+  ];
+
+  var mapOverlay = document.getElementById("mapOverlay");
+  var mapRowsEl = document.getElementById("mapRows");
+  var mapFileNameEl = document.getElementById("mapFileName");
+  var mapPreviewTable = document.getElementById("mapPreviewTable");
+  var mapError = document.getElementById("mapError");
+
+  function guessColumn(headers, keywords, excluded){
+    // Keyword-major order: check the most specific keyword across all headers
+    // before falling back to a looser one, and skip columns already claimed
+    // by an earlier (higher-priority) field.
+    for (var k = 0; k < keywords.length; k++){
+      for (var i = 0; i < headers.length; i++){
+        if (excluded.has(i)) continue;
+        var h = String(headers[i]).toLowerCase();
+        if (h.indexOf(keywords[k]) !== -1) return i;
+      }
+    }
+    return -1;
+  }
+
+  function openMapping(rows, fileName){
+    if (!rows.length){
+      alert("That file appears to be empty.");
+      return;
+    }
+    var headers = rows[0].map(function(h, i){ return String(h).trim() || ("Column " + (i+1)); });
+    var dataRows = rows.slice(1);
+    state.pendingImport = {headers: headers, rows: dataRows, fileName: fileName};
+
+    mapFileNameEl.textContent = fileName;
+    mapError.innerHTML = "";
+
+    var usedColumns = new Set();
+    mapRowsEl.innerHTML = FIELD_DEFS.map(function(f){
+      var guess = guessColumn(headers, f.keywords, usedColumns);
+      if (guess !== -1) usedColumns.add(guess);
+      var options = "<option value='-1'>— None —</option>" + headers.map(function(h, i){
+        return "<option value='" + i + "'" + (i === guess ? " selected" : "") + ">" + escapeHtml(h) + "</option>";
+      }).join("");
+      return "<div class='map-row'>" +
+        "<div class='field-name'>" + f.label + "<span>" + f.hint + "</span></div>" +
+        "<select data-field='" + f.key + "'>" + options + "</select>" +
+      "</div>";
+    }).join("");
+
+    var previewRows = dataRows.slice(0, 4);
+    mapPreviewTable.innerHTML =
+      "<tr>" + headers.map(function(h){ return "<th>" + escapeHtml(h) + "</th>"; }).join("") + "</tr>" +
+      previewRows.map(function(r){
+        return "<tr>" + headers.map(function(_, i){ return "<td>" + escapeHtml(r[i]) + "</td>"; }).join("") + "</tr>";
+      }).join("");
+
+    mapOverlay.hidden = false;
+  }
+
+  document.getElementById("btnMapCancel").addEventListener("click", function(){
+    mapOverlay.hidden = true;
+    state.pendingImport = null;
+  });
+
+  document.getElementById("btnMapConfirm").addEventListener("click", function(){
+    var pending = state.pendingImport;
+    if (!pending) return;
+    var selects = mapRowsEl.querySelectorAll("select[data-field]");
+    var mapping = {};
+    selects.forEach(function(sel){ mapping[sel.getAttribute("data-field")] = parseInt(sel.value, 10); });
+
+    if (mapping.brand === -1 || mapping.product === -1){
+      mapError.innerHTML = "<div class='error-banner'>Brand and Product Name/Details must be mapped to a column before importing.</div>";
+      return;
+    }
+
+    var imported = 0;
+    pending.rows.forEach(function(r){
+      var brand = mapping.brand !== -1 ? String(r[mapping.brand] || "").trim() : "";
+      var product = mapping.product !== -1 ? String(r[mapping.product] || "").trim() : "";
+      if (!brand && !product) return; // skip fully blank rows
+      var rawPrice = mapping.price !== -1 ? String(r[mapping.price] || "") : "";
+      var price = parseFloat(rawPrice.replace(/[^0-9.\-]/g, "")) || 0;
+      var weight = mapping.weight !== -1 ? String(r[mapping.weight] || "").trim() : "";
+      var type = mapping.type !== -1 ? normType(r[mapping.type]) : "hybrid";
+
+      state.labels.push({
+        id: uid(), brand: brand, product: product, price: price, weight: weight, type: type
+      });
+      imported++;
+    });
+
+    saveLabels();
+    renderAll();
+    mapOverlay.hidden = true;
+    state.pendingImport = null;
+    alert("Imported " + imported + " label" + (imported === 1 ? "" : "s") + ".");
+  });
+
+  /* ---------------- init ---------------- */
+  renderAll();
+})();
+</script>
+</body>
+</html>
