@@ -14,10 +14,18 @@ A free, browser-based tool for designing, importing, and printing 2-up retail sh
 
 ## Usage
 
-Just open `index.html` in any modern browser — locally or via the hosted link above. No build step, no dependencies to install.
+Open the [hosted link above](https://ThatOneRomanian.github.io/shelf-label-generator/) in any modern browser. No install, no account, no build step.
 
 `.csv` import works fully offline. `.xlsx`/`.xls` import loads [SheetJS](https://sheetjs.com/) from a CDN on first use, so that specific feature needs an internet connection.
 
 ## Privacy
 
 This is a static, client-side-only tool. Labels you add or import are stored only in your own browser's local storage — nothing is uploaded to any server.
+
+## License / Ownership
+
+Copyright (c) 2026 ThatOneRomanian. All rights reserved.
+
+This project is **not open source**. You're welcome to use the hosted app above for free, as-is. Copying, forking, modifying, redistributing, or rehosting the source code — or presenting it as your own work — is not permitted without prior written permission. See [LICENSE](LICENSE) for the full terms.
+
+Have a legitimate reason to reuse or build on this? [Open an issue](https://github.com/ThatOneRomanian/shelf-label-generator/issues) to ask.
