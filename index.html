@@ -266,27 +266,51 @@
     flex:0 0 56%;max-width:56%;border-right:1px solid #000;
     padding:.4em .6em;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
   }
+  /* width:max-content + max-width:100% on every autofitted field: the element
+     is exactly as wide as its text, capped at the column. That makes
+     scrollWidth > clientWidth an exact overflow test. Left as a full-width
+     block it always reports overflow (subpixel rounding); left to centre under
+     align-items it never does (it sizes past the column instead). */
   .cell-details .brand{
     font-weight:700;font-size:1.45em;line-height:1.15;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    width:max-content;max-width:100%;
   }
+  .details-inner{width:100%;min-width:0;}
   .cell-details .desc{
     font-weight:400;font-size:1.25em;line-height:1.2;
-    margin-top:.15em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    margin-top:.15em;overflow:hidden;
+  }
+  /* Applied only when autofit has bottomed out at its floor: end on an
+     ellipsis rather than a hard cut. The line count is set by JS from the
+     space actually left under the brand. */
+  .cell-details .desc.fit-clipped{
+    display:-webkit-box;-webkit-box-orient:vertical;
   }
   .cell-price{
     flex:0 0 24%;max-width:24%;border-right:1px solid #000;
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 .15em;
   }
-  /* nowrap so an over-long price visibly overflows in preview instead of
-     silently breaking as "$1,299." / "99". */
-  .cell-price .price-main{font-weight:700;font-size:1.4em;line-height:1.2;white-space:nowrap;}
+  /* nowrap so a long price is autofitted down as one piece rather than broken
+     as "$1468." / "99". The ellipsis is unreachable in practice -- $99999.99
+     still fits at full size -- but a visible "..." beats a silently cut digit. */
+  .cell-price .price-main{
+    font-weight:700;font-size:1.4em;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    width:max-content;max-width:100%;
+  }
   .cell-price .price-note{font-weight:400;font-size:.8em;color:#333;line-height:1.2;margin-top:.1em;text-transform:uppercase;letter-spacing:.02em;}
   .cell-badge{
     flex:0 0 20%;max-width:20%;display:flex;flex-direction:column;
     align-items:center;justify-content:center;text-align:center;padding:.15em;
   }
-  .cell-badge .qty{font-size:1.3em;font-weight:700;line-height:1.2;}
+  /* A weight long enough to survive the shrink to floor can't be represented in
+     a 0.8in column at all, so ellipsis rather than a hard cut. */
+  .cell-badge .qty{
+    font-size:1.3em;font-weight:700;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    width:max-content;max-width:100%;
+  }
   .cell-badge .type{font-size:1.05em;font-weight:600;line-height:1.2;text-transform:lowercase;letter-spacing:.02em;}
 
   .site-footer{
@@ -670,11 +694,13 @@
     state.settings.font = els.labelFont.value;
     saveSettings();
     applySettingsToCss();
+    refitWhenFontsReady(); // new face, new metrics
   });
   els.labelSize.addEventListener("change", function(){
     state.settings.scale = parseFloat(els.labelSize.value) || 1;
     saveSettings();
     applySettingsToCss();
+    fitLabelText(); // em sizes survive the scale change, but the box didn't
   });
 
   function resetForm(){
@@ -802,8 +828,14 @@
     var style = TYPE_STYLES[t];
     return "<div class='label-cell'>" +
       "<div class='cell-details'>" +
-        "<div class='brand'>" + escapeHtml(l.brand) + "</div>" +
-        "<div class='desc'>" + escapeHtml(l.product) + "</div>" +
+        // .details-inner exists so autofit can measure the brand+desc block's
+        // natural height. .cell-details centres its content, and centred flex
+        // overflow is clipped at both ends, which makes its own scrollHeight
+        // unreliable as a fit test.
+        "<div class='details-inner'>" +
+          "<div class='brand'>" + escapeHtml(l.brand) + "</div>" +
+          "<div class='desc'>" + escapeHtml(l.product) + "</div>" +
+        "</div>" +
       "</div>" +
       "<div class='cell-price'><div class='price-main'>" + fmtPrice(finalPrice(l.price)) + "</div><div class='price-note'>tax incl.</div></div>" +
       "<div class='cell-badge' style='background:" + style.bg + ";color:" + style.fg + ";'>" +
@@ -832,8 +864,95 @@
       frame.appendChild(page);
       els.sheetPages.appendChild(frame);
     }
+    fitLabelText();
     fitSheetPagesToViewport();
   }
+
+  /* ---------------- Autofit: shrink oversized label text ---------------- */
+
+  // Sizes are em against .label-cell's font-size, so a fitted value stays
+  // correct across a --label-scale change (the box is fixed, though, so a
+  // refit is still needed -- see the settings handlers).
+  //
+  // The floors are set by what still reproduces on paper at scale 1 (~7.5pt),
+  // not by what merely fits: past the floor we truncate rather than shrink
+  // into an unreadable smudge. Price gets the lowest floor because a small
+  // correct price beats a clipped wrong-looking one.
+  var FIT_WIDTH = [
+    {sel:".brand",      max:1.45, min:1.00},
+    {sel:".price-main", max:1.40, min:0.80},
+    {sel:".qty",        max:1.30, min:0.85}
+  ];
+  var DESC_MAX = 1.25, DESC_MIN = 0.85;
+  var FIT_STEPS = 7; // ~0.005em resolution over the widest range
+
+  // Single-line fields: shrink until the text stops overflowing. Exact only
+  // because these are width:max-content, capped at the column -- see the CSS.
+  function fitWidth(el, max, min){
+    el.style.fontSize = max + "em";
+    if (el.scrollWidth <= el.clientWidth) return; // common case, no search
+    var lo = min, hi = max;
+    for (var i = 0; i < FIT_STEPS; i++){
+      var mid = (lo + hi) / 2;
+      el.style.fontSize = mid + "em";
+      if (el.scrollWidth <= el.clientWidth) lo = mid; else hi = mid;
+    }
+    el.style.fontSize = lo + "em";
+  }
+
+  // Description: wraps freely, so fit on height against the space the brand
+  // leaves behind rather than on width.
+  function fitDesc(desc, inner, box){
+    desc.classList.remove("fit-clipped");
+    desc.style.webkitLineClamp = "";
+    desc.style.lineClamp = "";
+    desc.style.fontSize = DESC_MAX + "em";
+    // clientHeight counts the padding the inner block has to sit inside, so
+    // measure against the content box or the text creeps under the border.
+    var boxStyle = getComputedStyle(box);
+    var boxH = box.clientHeight
+      - (parseFloat(boxStyle.paddingTop) || 0)
+      - (parseFloat(boxStyle.paddingBottom) || 0);
+    if (inner.offsetHeight <= boxH) return;
+    var lo = DESC_MIN, hi = DESC_MAX;
+    for (var i = 0; i < FIT_STEPS; i++){
+      var mid = (lo + hi) / 2;
+      desc.style.fontSize = mid + "em";
+      if (inner.offsetHeight <= boxH) lo = mid; else hi = mid;
+    }
+    desc.style.fontSize = lo + "em";
+    if (inner.offsetHeight <= boxH) return;
+    // Bottomed out: clamp to the whole lines that actually fit underneath.
+    var lineHeight = parseFloat(getComputedStyle(desc).lineHeight) || 1;
+    var available = boxH - (inner.offsetHeight - desc.offsetHeight);
+    var lines = String(Math.max(1, Math.floor(available / lineHeight)));
+    desc.classList.add("fit-clipped");
+    desc.style.webkitLineClamp = lines;
+    desc.style.lineClamp = lines;
+  }
+
+  function fitLabelText(){
+    var cells = els.sheetPages.querySelectorAll(".label-cell");
+    cells.forEach(function(cell){
+      FIT_WIDTH.forEach(function(rule){
+        var el = cell.querySelector(rule.sel);
+        if (el) fitWidth(el, rule.max, rule.min);
+      });
+      var desc = cell.querySelector(".desc");
+      var inner = cell.querySelector(".details-inner");
+      var box = cell.querySelector(".cell-details");
+      if (desc && inner && box) fitDesc(desc, inner, box);
+    });
+  }
+
+  // Text metrics change when a webfont finishes loading, and every fitted size
+  // above was measured against whatever was rendering at the time. Refit once
+  // the font settles or the print comes out sized for the fallback face.
+  function refitWhenFontsReady(){
+    fitLabelText();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLabelText);
+  }
+  window.addEventListener("beforeprint", fitLabelText);
 
   // On narrow screens, scale the (fixed 8.5x11in) preview down to fit so the
   // whole sheet is visible at once, instead of relying on side-scrolling.
@@ -1074,6 +1193,7 @@
   /* ---------------- init ---------------- */
   renderSettingsControls();
   renderAll();
+  refitWhenFontsReady(); // first paint may still be on the fallback face
 })();
 </script>
 </body>
