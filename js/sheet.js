@@ -91,16 +91,32 @@
   var DESC_MAX = 1.25, DESC_MIN = 0.85;
   var FIT_STEPS = 7; // ~0.005em resolution over the widest range
 
+  // scrollWidth and clientWidth are integer-rounded, so they cannot see a
+  // fractional overflow: a binary search driven by them converges on the
+  // largest size that passes an *integer* test, which is up to 1px too wide,
+  // and the renderer then ellipsises what the search believed had fitted.
+  // ("10x1 Pack" measured 73.344px of text in a 72.719px box while reporting
+  // scrollWidth - clientWidth === 0.)
+  //
+  // A Range gives the text's real sub-pixel width. Comparing two
+  // getBoundingClientRect values also keeps this valid under the preview's
+  // scale transform, since both are scaled by the same factor.
+  var fitRange = document.createRange();
+  function overflowsWidth(el) {
+    fitRange.selectNodeContents(el);
+    return fitRange.getBoundingClientRect().width - el.getBoundingClientRect().width > 0.01;
+  }
+
   // Single-line fields: shrink until the text stops overflowing. Exact only
   // because these are width:max-content capped at the column -- see the CSS.
   function fitWidth(el, max, min) {
     el.style.fontSize = max + "em";
-    if (el.scrollWidth <= el.clientWidth) return; // common case, no search
+    if (!overflowsWidth(el)) return; // common case, no search
     var lo = min, hi = max;
     for (var i = 0; i < FIT_STEPS; i++) {
       var mid = (lo + hi) / 2;
       el.style.fontSize = mid + "em";
-      if (el.scrollWidth <= el.clientWidth) lo = mid; else hi = mid;
+      if (!overflowsWidth(el)) lo = mid; else hi = mid;
     }
     el.style.fontSize = lo + "em";
   }
@@ -114,10 +130,16 @@
     desc.style.fontSize = DESC_MAX + "em";
     // clientHeight counts the padding the inner block has to sit inside, so
     // measure against the content box or the text creeps under the border.
+    //
+    // offsetHeight is integer-rounded like scrollWidth, so it has the same
+    // blind spot as the width test above; a Range is no help on the vertical
+    // axis, so take a 1px haircut instead of shaving the last line's
+    // descenders. Costs nothing visible over a 3-4 line description.
     var boxStyle = getComputedStyle(box);
     var boxH = box.clientHeight
       - (parseFloat(boxStyle.paddingTop) || 0)
-      - (parseFloat(boxStyle.paddingBottom) || 0);
+      - (parseFloat(boxStyle.paddingBottom) || 0)
+      - 1;
     if (inner.offsetHeight <= boxH) return;
     var lo = DESC_MIN, hi = DESC_MAX;
     for (var i = 0; i < FIT_STEPS; i++) {
