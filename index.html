@@ -63,6 +63,12 @@
     --hybrid-fg:#ffffff;
     --label-font:Arial,Helvetica,sans-serif;
     --label-scale:1;
+
+    /* ---- Physical label geometry. These describe the real cut tag, not the
+       page: the row count per sheet is derived from --label-h in JS
+       (LABEL_H_IN), so change the height there and it propagates here. ---- */
+    --label-w:4in;   /* (8.5in sheet - 2 x 0.25in page padding) / 2 across */
+    --label-h:1in;   /* real cut height; set via LABEL_H_IN */
   }
   *{box-sizing:border-box;}
   body{
@@ -238,38 +244,50 @@
     box-shadow:0 2px 10px rgba(0,0,0,.18);padding:0.25in;
     transform-origin:top left;
   }
+  /* Rows are sized by the physical label, not by dividing the page. Anything
+     left over falls at the bottom of the sheet as slack (align-content:start)
+     rather than being spread into taller labels. */
   .label-grid{
-    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(8,1fr);
-    width:100%;height:100%;
+    display:grid;
+    grid-template-columns:repeat(2, var(--label-w));
+    grid-auto-rows:var(--label-h);
+    justify-content:center;align-content:start;
+    width:100%;
   }
+  /* The negative margins let each cell's border overlap its neighbour's, so
+     interior cut lines print as one 1px hairline instead of two stacked. */
   .label-cell{
     display:flex;border:1px solid #000;overflow:hidden;font-family:var(--label-font);
+    margin:0 -1px -1px 0;
+    font-size:calc(13px * var(--label-scale)); /* single knob; children are em */
   }
   .label-cell.blank{border-color:#000;}
   .cell-details{
-    flex:0 0 60%;max-width:60%;border-right:1px solid #000;
-    padding:5px 8px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+    flex:0 0 56%;max-width:56%;border-right:1px solid #000;
+    padding:.4em .6em;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
   }
   .cell-details .brand{
-    font-weight:700;font-size:calc(14px * var(--label-scale));line-height:1.15;
+    font-weight:700;font-size:1.45em;line-height:1.15;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .cell-details .desc{
-    font-weight:400;font-size:calc(12px * var(--label-scale));line-height:1.2;
-    margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    font-weight:400;font-size:1.25em;line-height:1.2;
+    margin-top:.15em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
   }
   .cell-price{
-    flex:0 0 20%;max-width:20%;border-right:1px solid #000;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2px;
+    flex:0 0 24%;max-width:24%;border-right:1px solid #000;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 .15em;
   }
-  .cell-price .price-main{font-weight:700;font-size:calc(15px * var(--label-scale));line-height:1.2;}
-  .cell-price .price-note{font-weight:400;font-size:calc(8.5px * var(--label-scale));color:#333;line-height:1.2;margin-top:1px;text-transform:uppercase;letter-spacing:.02em;}
+  /* nowrap so an over-long price visibly overflows in preview instead of
+     silently breaking as "$1,299." / "99". */
+  .cell-price .price-main{font-weight:700;font-size:1.4em;line-height:1.2;white-space:nowrap;}
+  .cell-price .price-note{font-weight:400;font-size:.8em;color:#333;line-height:1.2;margin-top:.1em;text-transform:uppercase;letter-spacing:.02em;}
   .cell-badge{
     flex:0 0 20%;max-width:20%;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;text-align:center;padding:2px;
+    align-items:center;justify-content:center;text-align:center;padding:.15em;
   }
-  .cell-badge .qty{font-size:calc(13px * var(--label-scale));font-weight:700;line-height:1.2;}
-  .cell-badge .type{font-size:calc(11px * var(--label-scale));font-weight:600;line-height:1.2;text-transform:lowercase;letter-spacing:.02em;}
+  .cell-badge .qty{font-size:1.3em;font-weight:700;line-height:1.2;}
+  .cell-badge .type{font-size:1.05em;font-weight:600;line-height:1.2;text-transform:lowercase;letter-spacing:.02em;}
 
   .site-footer{
     background:#14171a;color:#8b929b;padding:var(--space-5) 0;margin-top:0;font-size:var(--text-sm);
@@ -338,8 +356,11 @@
     .sheet-page-frame{
       margin:0 !important;width:auto !important;height:auto !important;
     }
+    /* height:auto, not 11in: a block exactly as tall as the page box spills by
+       a rounding hair under @page margin:0 and emits a blank page after every
+       sheet. The grid is 10in + 0.5in padding, so it breaks cleanly. */
     .sheet-page{
-      box-shadow:none;margin:0;width:8.5in;height:11in;
+      box-shadow:none;margin:0;width:8.5in;height:auto;
       transform:none !important;
       page-break-after:always;
     }
@@ -502,7 +523,12 @@
     indica: {bg:"#3D73CD", fg:"#ffffff"},
     hybrid: {bg:"#328B52", fg:"#ffffff"}
   };
-  var LABELS_PER_PAGE = 16; // 2 cols x 8 rows
+  // Label height is the input; rows per sheet is the output. Changing
+  // LABEL_H_IN repaginates and resizes the grid (pushed to --label-h below).
+  var PAGE_USABLE_H_IN = 10.5; // 11in sheet - 2 x 0.25in page padding
+  var LABEL_COLS = 2;
+  var LABEL_H_IN = 1;
+  var LABELS_PER_PAGE = Math.floor(PAGE_USABLE_H_IN / LABEL_H_IN) * LABEL_COLS;
   var FONT_CHOICES = [
     {value:"Arial, Helvetica, sans-serif", label:"Arial (Default)"},
     {value:"'Helvetica Neue', Helvetica, Arial, sans-serif", label:"Helvetica"},
@@ -515,9 +541,10 @@
     {value:"'Courier New', Courier, monospace", label:"Courier New (Mono)"}
   ];
   var SIZE_CHOICES = [
-    {value:"0.85", label:"Small"},
-    {value:"1", label:"Medium (Default)"},
-    {value:"1.18", label:"Large"}
+    {value:"0.8", label:"Small"},
+    {value:"0.9", label:"Medium"},
+    {value:"1", label:"Large (Default)"},
+    {value:"1.12", label:"Extra Large"}
   ];
   var DEFAULT_SETTINGS = {taxRate:13, font:FONT_CHOICES[0].value, scale:1};
 
@@ -542,10 +569,16 @@
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.labels)); }catch(e){}
   }
   function loadSettings(){
+    var s;
     try{
       var raw = localStorage.getItem(SETTINGS_KEY);
-      return raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
-    }catch(e){ return Object.assign({}, DEFAULT_SETTINGS); }
+      s = raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : Object.assign({}, DEFAULT_SETTINGS);
+    }catch(e){ s = Object.assign({}, DEFAULT_SETTINGS); }
+    // A scale saved under an older SIZE_CHOICES list won't match any option,
+    // which would leave the Text Size select blank. Fall back to the default.
+    var known = SIZE_CHOICES.some(function(c){ return parseFloat(c.value) === parseFloat(s.scale); });
+    if (!known) s.scale = DEFAULT_SETTINGS.scale;
+    return s;
   }
   function saveSettings(){
     try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); }catch(e){}
@@ -553,6 +586,7 @@
   function applySettingsToCss(){
     document.documentElement.style.setProperty("--label-font", state.settings.font);
     document.documentElement.style.setProperty("--label-scale", state.settings.scale);
+    document.documentElement.style.setProperty("--label-h", LABEL_H_IN + "in");
   }
 
   function escapeHtml(s){
